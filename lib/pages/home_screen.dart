@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'cart_screen.dart';
-import 'product_listing_screen.dart';
+import 'package:ecommerce_app/pages/cart_screen.dart';
+import 'package:ecommerce_app/pages/product_listing_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -15,7 +15,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -24,18 +24,21 @@ class HomeScreen extends StatelessWidget {
                   ),
                 );
               },
-              child: const Text('Go to Product Listing'),
+              icon: const Icon(Icons.shopping_bag),
+              label: const Text('Product Listing'),
             ),
-            ElevatedButton(
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const CartScreen(),
+                    builder: (context) => CartScreen(),
                   ),
                 );
               },
-              child: const Text('Go to Cart'),
+              icon: const Icon(Icons.shopping_cart),
+              label: const Text('Cart'),
             ),
           ],
         ),

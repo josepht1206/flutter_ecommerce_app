@@ -1,120 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:ecommerce_app/providers/cart_provider.dart';
+import 'package:ecommerce_app/models/cart_item.dart';
 
-import '../models/product.dart';
-
-class CartScreen extends StatefulWidget {
+class CartScreen extends StatelessWidget {
   const CartScreen({Key? key}) : super(key: key);
 
   @override
-  _CartScreenState createState() => _CartScreenState();
-}
-
-class _CartScreenState extends State<CartScreen> {
-  List<CartProduct> cartProducts = Cart.getCartProducts();
-
-  void _updateCartProducts() {
-    setState(() {
-      cartProducts = Cart.getCartProducts();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final cartProvider = Provider.of<CartProvider>(context);
+    final cartItems = cartProvider.cartItems;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cart'),
       ),
-      body: ListView.builder(
-        itemCount: cartProducts.length,
-        itemBuilder: (context, index) {
-          final cartProduct = cartProducts[index];
-          return ListTile(
-            leading: Image.network(cartProduct.product.image),
-            title: Text(cartProduct.product.title),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('\$${cartProduct.product.price}'),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove),
-                      onPressed: () {
-                        setState(() {
-                          Cart.decreaseQuantity(cartProduct);
-                        });
-                      },
-                    ),
-                    Text(cartProduct.quantity.toString()),
-                    IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: () {
-                        setState(() {
-                          Cart.increaseQuantity(cartProduct);
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                Cart.removeProduct(cartProduct);
-                _updateCartProducts();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Product removed from cart'),
+      body: cartItems.isEmpty
+          ? Center(
+              child: const Text('Your cart is empty.'),
+            )
+          : ListView.builder(
+              itemCount: cartItems.length,
+              itemBuilder: (context, index) {
+                final cartItem = cartItems[index];
+                return ListTile(
+                  leading: Image.network(
+                    cartItem.product['image'],
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
+                  title: Text(cartItem.product['title']),
+                  subtitle: Text('\$${cartItem.product['price']}'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove),
+                        onPressed: () {
+                          cartProvider.decreaseQuantity(cartItem);
+                        },
+                      ),
+                      Text('${cartItem.quantity}'),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () {
+                          cartProvider.increaseQuantity(cartItem);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () {
+                          cartProvider.removeItem(cartItem);
+                        },
+                      ),
+                    ],
                   ),
                 );
               },
             ),
-          );
-        },
-      ),
+      bottomNavigationBar: cartItems.isNotEmpty
+          ? BottomAppBar(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        cartProvider.clearCart();
+                      },
+                      child: const Text('Clear Cart'),
+                    ),
+                    Text(
+                      'Total: \$${calculateTotal(cartItems)}',
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
-}
 
-class CartProduct {
-  final Product product;
-  int quantity;
-
-  CartProduct({required this.product, this.quantity = 1});
-}
-
-class Cart {
-  static final List<CartProduct> _cartProducts = [];
-
-  static void addProduct(Product product) {
-    final existingProductIndex = _cartProducts.indexWhere(
-      (cartProduct) => cartProduct.product.id == product.id,
-    );
-
-    if (existingProductIndex != -1) {
-      _cartProducts[existingProductIndex].quantity++;
-    } else {
-      final cartProduct = CartProduct(product: product);
-      _cartProducts.add(cartProduct);
+  String calculateTotal(List<CartItem> cartItems) {
+    double total = 0;
+    for (final cartItem in cartItems) {
+      final price = double.parse(cartItem.product['price'].toString());
+      total += price * cartItem.quantity;
     }
-  }
-
-  static void removeProduct(CartProduct cartProduct) {
-    _cartProducts.remove(cartProduct);
-  }
-
-  static void increaseQuantity(CartProduct cartProduct) {
-    cartProduct.quantity++;
-  }
-
-  static void decreaseQuantity(CartProduct cartProduct) {
-    if (cartProduct.quantity > 1) {
-      cartProduct.quantity--;
-    }
-  }
-
-  static List<CartProduct> getCartProducts() {
-    return List.from(_cartProducts);
+    return total.toStringAsFixed(2);
   }
 }
